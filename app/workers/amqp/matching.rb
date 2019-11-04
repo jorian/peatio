@@ -70,7 +70,7 @@ module Workers
         engine = create_engine(market)
         load_orders(market)
         engine.initializing = false
-        engine.publish_snapshot(market)
+        engine.publish_snapshot
         start_engine(market)
       end
 
