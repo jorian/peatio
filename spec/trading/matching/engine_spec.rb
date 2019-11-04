@@ -654,4 +654,37 @@ describe Matching::Engine do
       expect(subject.queue.first).to eq [:trade_executor, { action: "execute", trade: { market_id: market.id, maker_order_id: ask.id, taker_order_id: bid.id, strike_price: price, amount: volume, total: '50.0'.to_d } }, { persistent: false }]
     end
   end
+
+  context 'publish_increment' do
+    before(:each) { subject.initializing = false }
+
+    it 'should publish increment of orderbook' do
+      Peatio::MQ::Events.expects(:publish).with("public", market.id, "ob-inc", { "asks" => ["10.0", "5.0"] })
+      Peatio::MQ::Events.expects(:publish).with("public", market.id, "ob-inc", { "bids" => ["10.0", "5.0"] })
+
+      subject.publish_increment(market.id, :ask, ask.price, ask.volume)
+      subject.publish_increment(market.id, :bid, bid.price, bid.volume)
+    end
+  end
+
+  context 'publish_snapshot' do
+    let(:ask1)    { Matching.mock_limit_order(type: :ask, price: "14".to_d, volume: "1.0".to_d) }
+    let(:ask2)    { Matching.mock_limit_order(type: :ask, price: "12".to_d, volume: "1.0".to_d) }
+    let(:bid1)    { Matching.mock_limit_order(type: :bid, price: "11".to_d, volume: "2.0".to_d) }
+    let(:bid2)    { Matching.mock_limit_order(type: :bid, price: "10".to_d, volume: "2.0".to_d) }
+
+    it 'should publish snapshot of orderbook' do
+      subject.submit(ask1)
+      subject.submit(ask2)
+      subject.submit(bid1)
+      subject.submit(bid2)
+
+      Peatio::MQ::Events.expects(:publish).with("public", market.id, "ob-snap", {
+        "asks" => [["12.0", "1.0"], ["14.0", "1.0"]],
+        "bids" => [["11.0", "2.0"], ["10.0", "2.0"]],
+      })
+      subject.publish_snapshot
+    end
+  end
+
 end

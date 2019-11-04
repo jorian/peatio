@@ -9,12 +9,14 @@ module Matching
     ORDER_SUBMIT_MAX_ATTEMPTS = 3
 
     attr :orderbook, :mode, :queue
+    attr_accessor :initializing
     delegate :ask_orders, :bid_orders, to: :orderbook
 
     def initialize(market, options={})
       @market    = market
-      @orderbook = OrderBookManager.new(market.id)
-
+      @orderbook = OrderBookManager.new(market.id, on_change: method(:publish_increment))
+      @initializing = true
+      @increment_count = 0
       # Engine is able to run in different mode:
       # dryrun: do the match, do not publish the trades
       # run:    do the match, publish the trades (default)
@@ -119,6 +121,27 @@ module Matching
     def market_orders
       { ask: ask_orders.market_orders,
         bid: bid_orders.market_orders }
+    end
+
+    def publish_snapshot
+      Peatio::MQ::Events.publish("public", @market.id, "ob-snap", {
+        "asks" => ask_orders.limit_orders.map{|k,v| [k.to_s, v.map(&:volume).reduce(ZERO, :+).to_s]}[0..300],
+        "bids" => bid_orders.limit_orders.map{|k,v| [k.to_s, v.map(&:volume).reduce(ZERO, :+).to_s]}.reverse[0..300],
+      })
+    end
+
+    def publish_increment(market, side, price, amount)
+      return if @initializing
+
+      if @increment_count == 20
+        publish_snapshot
+        @increment_count = 0
+        return
+      end
+      @increment_count += 1
+      Peatio::MQ::Events.publish("public", market, "ob-inc", {
+        "#{side}s" => [price.to_s, amount.to_s],
+      })
     end
 
     private

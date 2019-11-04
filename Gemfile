@@ -4,7 +4,7 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo_slug| "https://github.com/#{repo_slug}" }
 
-ruby '2.6.5'
+ruby '~> 2.6'
 
 gem 'ransack', '~> 2.1.1'
 gem 'rails', '~> 5.2.3'
@@ -62,6 +62,7 @@ gem 'bootsnap', '>= 1.1.0', require: false
 gem 'net-http-persistent', '~> 3.0.1'
 
 group :development, :test do
+  gem 'irb'
   gem 'bump',         '~> 0.7'
   gem 'faker',        '~> 1.8'
   gem 'pry-byebug',   '~> 3.7'

@@ -13,6 +13,7 @@ module Matching
       @side   = side.to_sym
       @limit_orders = RBTree.new
       @market_orders = RBTree.new
+      @on_change = options[:on_change]
 
       singleton = class<<self;self;end
       singleton.send :define_method, :limit_top, self.class.instance_method("#{@side}_limit_top")
@@ -36,7 +37,11 @@ module Matching
       raise "No top order in empty book." unless order
 
       order.fill trade_price, trade_volume, trade_funds
-      remove order if order.filled?
+      if order.filled?
+        remove order
+      else
+        @on_change.call(@market, @side, trade_price, @limit_orders[trade_price]&.total) if @on_change
+      end
     end
 
     def find(order)
@@ -55,6 +60,7 @@ module Matching
       when LimitOrder
         @limit_orders[order.price] ||= PriceLevel.new(order.price)
         @limit_orders[order.price].add order
+        @on_change.call(@market, @side, order.price, @limit_orders[order.price]&.total) if @on_change
       when MarketOrder
         raise MarketOrderbookError.new(order, 'market order adding to orderbook detected')
       else
@@ -65,7 +71,9 @@ module Matching
     def remove(order)
       case order
       when LimitOrder
-        remove_limit_order(order)
+        updated_order = remove_limit_order(order)
+        @on_change.call(@market, @side, order.price, @limit_orders[order.price]&.total) if @on_change
+        return updated_order
       when MarketOrder
         remove_market_order(order)
       else
