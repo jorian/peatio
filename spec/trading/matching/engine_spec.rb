@@ -659,8 +659,8 @@ describe Matching::Engine do
     before(:each) { subject.initializing = false }
 
     it 'should publish increment of orderbook' do
-      Peatio::MQ::Events.expects(:publish).with("public", market.id, "ob-inc", { "asks" => ["10.0", "5.0"] })
-      Peatio::MQ::Events.expects(:publish).with("public", market.id, "ob-inc", { "bids" => ["10.0", "5.0"] })
+      Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-inc", { "asks" => ["10.0", "5.0"] })
+      Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-inc", { "bids" => ["10.0", "5.0"] })
 
       subject.publish_increment(market.id, :ask, ask.price, ask.volume)
       subject.publish_increment(market.id, :bid, bid.price, bid.volume)
@@ -679,7 +679,7 @@ describe Matching::Engine do
       subject.submit(bid1)
       subject.submit(bid2)
 
-      Peatio::MQ::Events.expects(:publish).with("public", market.id, "ob-snap", {
+      Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-snap", {
         "asks" => [["12.0", "1.0"], ["14.0", "1.0"]],
         "bids" => [["11.0", "2.0"], ["10.0", "2.0"]],
       })

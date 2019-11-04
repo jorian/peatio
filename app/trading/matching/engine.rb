@@ -124,7 +124,7 @@ module Matching
     end
 
     def publish_snapshot
-      Peatio::MQ::Events.publish("public", @market.id, "ob-snap", {
+      Peatio::Ranger::Events.publish("public", @market.id, "ob-snap", {
         "asks" => ask_orders.limit_orders.map{|k,v| [k.to_s, v.map(&:volume).reduce(ZERO, :+).to_s]}[0..300],
         "bids" => bid_orders.limit_orders.map{|k,v| [k.to_s, v.map(&:volume).reduce(ZERO, :+).to_s]}.reverse[0..300],
       })
@@ -139,7 +139,7 @@ module Matching
         return
       end
       @increment_count += 1
-      Peatio::MQ::Events.publish("public", market, "ob-inc", {
+      Peatio::Ranger::Events.publish("public", market, "ob-inc", {
         "#{side}s" => [price.to_s, amount.to_s],
       })
     end

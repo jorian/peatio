@@ -12,7 +12,7 @@ module Workers
         event = payload["event"]
         data = payload["data"]
 
-        Peatio::MQ::Events.publish("private", uid, event, data)
+        Peatio::Ranger::Events.publish("private", uid, event, data)
       end
     end
   end
