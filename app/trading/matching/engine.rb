@@ -125,8 +125,8 @@ module Matching
 
     def publish_snapshot
       Peatio::Ranger::Events.publish("public", @market.id, "ob-snap", {
-        "asks" => ask_orders.limit_orders.map{|k,v| [k.to_s, v.map(&:volume).reduce(ZERO, :+).to_s]}[0..300],
-        "bids" => bid_orders.limit_orders.map{|k,v| [k.to_s, v.map(&:volume).reduce(ZERO, :+).to_s]}.reverse[0..300],
+        "asks" => ask_orders.limit_orders.map{|k,v| [k.to_s, v.map(&:volume).sum.to_s]}[0..300],
+        "bids" => bid_orders.limit_orders.map{|k,v| [k.to_s, v.map(&:volume).sum.to_s]}.reverse[0..300],
       })
     end
 

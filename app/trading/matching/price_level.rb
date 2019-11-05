@@ -26,7 +26,7 @@ module Matching
     end
 
     def total
-      @orders.map(&:volume).reduce(ZERO, :+)
+      @orders.map(&:volume).sum
     end
 
     def remove(order)

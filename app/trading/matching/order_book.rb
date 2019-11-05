@@ -19,6 +19,15 @@ module Matching
       singleton.send :define_method, :limit_top, self.class.instance_method("#{@side}_limit_top")
     end
 
+    def notify_change(market, side, price, amount=nil)
+      return unless @on_change
+
+      amount ||= yield
+      @on_change.call(market, side, price, amount)
+    rescue StandardError => e
+      report_exception(e)
+    end
+
     def best_limit_price
       limit_top.try(:price)
     end
@@ -40,7 +49,7 @@ module Matching
       if order.filled?
         remove order
       else
-        @on_change.call(@market, @side, trade_price, @limit_orders[trade_price]&.total) if @on_change
+        notify_change(@market, @side, trade_price) { @limit_orders[trade_price]&.total }
       end
     end
 
@@ -60,7 +69,7 @@ module Matching
       when LimitOrder
         @limit_orders[order.price] ||= PriceLevel.new(order.price)
         @limit_orders[order.price].add order
-        @on_change.call(@market, @side, order.price, @limit_orders[order.price]&.total) if @on_change
+        notify_change(@market, @side, order.price) { @limit_orders[order.price]&.total }
       when MarketOrder
         raise MarketOrderbookError.new(order, 'market order adding to orderbook detected')
       else
@@ -72,7 +81,7 @@ module Matching
       case order
       when LimitOrder
         updated_order = remove_limit_order(order)
-        @on_change.call(@market, @side, order.price, @limit_orders[order.price]&.total) if @on_change
+        notify_change(@market, @side, order.price) { @limit_orders[order.price]&.total }
         return updated_order
       when MarketOrder
         remove_market_order(order)
