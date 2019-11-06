@@ -68,4 +68,71 @@ describe API::V2::Admin::Members, type: :request do
       end
     end
   end
+
+  describe 'Get by uid' do
+    context 'authentication' do
+      it 'requires token' do
+        get "/api/v2/admin/members/#{member.uid}"
+        expect(response.code).to eq '401'
+      end
+
+      it 'validates permissions' do
+        api_get "/api/v2/admin/members/#{member.uid}", token: member_token
+        expect(response.code).to eq '403'
+        expect(response).to include_api_error('admin.ability.not_permitted')
+      end
+
+      it 'authenticate admin' do
+        api_get "/api/v2/admin/members/#{member.uid}", token: token
+        expect(response).to be_successful
+      end
+    end
+
+    context 'get user by uid' do
+      it 'returns user entities' do
+        api_get "/api/v2/admin/members/UID1234", token: token
+        expect(response.code).to eq '404'
+
+        expect(response).to include_api_error('record.not_found')
+      end
+
+      it 'returns user entities' do
+        api_get "/api/v2/admin/members/#{member.uid}", token: token
+        expect(response).to be_successful
+        result = JSON.parse(response.body)
+
+        expect(result['uid']).to eq(member.uid)
+        expect(result['email']).to eq(member.email)
+        expect(result['uid']).to eq(member.uid)
+        expect(result['group']).to eq(member.group)
+      end
+    end
+  end
+
+  describe 'GET /api/v2/admin/members/groups' do
+    it 'get list of all existing groups' do
+      api_get '/api/v2/admin/members/groups', token: token
+      expect(JSON.parse(response.body)).to match_array Member.groups.map &:to_s
+    end
+  end
+
+  describe 'POST /api/v2/admin/members/groups' do
+    it 'returns user with updated role' do
+      api_put "/api/v2/admin/members/#{member.uid}", token: token, params: { group: 'vip-2' }
+      expect(response).to have_http_status(201)
+      expect(JSON.parse(response.body)['group']).to eq('vip-2')
+    end
+
+    it 'returns status 404 and error' do
+      api_put "/api/v2/admin/members/U1234", token: token, params: { group: 'vip-2' }
+      expect(response).to have_http_status(404)
+      expect(response).to include_api_error('record.not_found')
+    end
+
+    it 'validate params' do
+      api_put "/api/v2/admin/members/#{member.uid}", token: token
+      expect(response).to have_http_status(422)
+      expect(response).to include_api_error('admin.member.missing_group')
+    end
+  end
 end

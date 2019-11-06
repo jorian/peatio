@@ -34,6 +34,53 @@ module API
           search.sorts = "#{params[:order_by]} #{params[:ordering]}"
           present paginate(search.result), with: API::V2::Admin::Entities::Member
         end
+
+        desc 'Get existing member groups.',
+          is_array: true
+        get '/members/groups' do
+          authorize! :read, Member
+
+          Member.groups
+        end
+
+        desc 'Get a member.' do
+          success API::V2::Admin::Entities::Member
+        end
+        params do
+          requires :uid,
+                   type: String,
+                   desc: 'The shared user ID.'
+        end
+        get '/members/:uid' do
+          authorize! :read, Member
+
+          present Member.find_by!(uid: params[:uid]), with: API::V2::Admin::Entities::Member
+        end
+
+        desc 'Set user group.' do
+          success API::V2::Admin::Entities::Member
+        end
+        params do
+          requires :uid,
+                   type: String,
+                   desc: 'The shared user ID.'
+          requires :group,
+                   type: String,
+                   desc: 'User gruop'
+        end
+        put '/members/:uid' do
+          authorize! :update, Member
+          declared_params = declared(params)
+
+          member = Member.find_by!(uid: declared_params[:uid])
+          if member.update(group: declared_params[:group])
+            present member, with: API::V2::Admin::Entities::Member
+            status 201
+          else
+            body errors: member.errors.full_messages
+            status 422
+          end
+        end
       end
     end
   end
