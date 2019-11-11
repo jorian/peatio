@@ -85,7 +85,9 @@ module API
               type: JSON,
               desc: 'Wallet settings.'
             }
-          )
+          ) do |wallet, _options|
+            wallet.settings.except('secret', 'bitgo_wallet_passphrase', 'bitgo_rest_api_access_token')
+          end
 
           expose(
             :created_at,
