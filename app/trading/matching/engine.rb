@@ -12,13 +12,14 @@ module Matching
     MAX_PERIOD_TO_SNAPSHOT = 60.second
 
     attr :orderbook, :mode, :queue
-    attr_accessor :initializing, :snapshot_time, :increment_count
+    attr_accessor :initializing, :snapshot_time, :increment_count, :sequence_number
     delegate :ask_orders, :bid_orders, to: :orderbook
 
     def initialize(market, options={})
       @market    = market
       @orderbook = OrderBookManager.new(market.id, on_change: method(:publish_increment))
       @initializing = true
+      @sequence_number = 1
       @increment_count = 0
       @snapshot_time = Time.now
       # Engine is able to run in different mode:
@@ -132,6 +133,7 @@ module Matching
       Peatio::Ranger::Events.publish("public", @market.id, "ob-snap", {
         "asks" => ask_orders.limit_orders.map{|k,v| [k.to_s, v.map(&:volume).sum.to_s]}[0..300],
         "bids" => bid_orders.limit_orders.map{|k,v| [k.to_s, v.map(&:volume).sum.to_s]}.reverse[0..300],
+        "sequence" => @sequence_number,
       })
     end
 
@@ -149,8 +151,10 @@ module Matching
         @increment_count = 0
       end
       @increment_count += 1
+      @sequence_number += 1
       Peatio::Ranger::Events.publish("public", market, "ob-inc", {
         "#{side}s" => [price.to_s, amount.to_s],
+        "sequence" => @sequence_number,
       })
     end
 

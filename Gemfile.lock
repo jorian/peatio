@@ -8,8 +8,8 @@ GIT
 
 GIT
   remote: https://github.com/rubykube/peatio-core.git
-  revision: 982a3d5a6a347843aff4280658b3027129946cd4
-  ref: 982a3d5a
+  revision: 64ad9b44e5f6cb74594c112b065aac8756c8604f
+  ref: 64ad9b44
   specs:
     peatio (0.6.2)
       activemodel (> 5.2, <= 6.0.0)

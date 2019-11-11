@@ -659,8 +659,8 @@ describe Matching::Engine do
     before(:each) { subject.initializing = false }
 
     it 'should publish increment of orderbook' do
-      Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-inc", { "asks" => ["10.0", "5.0"] })
-      Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-inc", { "bids" => ["10.0", "5.0"] })
+      Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-inc", { "asks" => ["10.0", "5.0"], "sequence" => 2, })
+      Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-inc", { "bids" => ["10.0", "5.0"], "sequence" => 3, })
 
       subject.publish_increment(market.id, :ask, ask.price, ask.volume)
       subject.publish_increment(market.id, :bid, bid.price, bid.volume)
@@ -682,6 +682,7 @@ describe Matching::Engine do
       Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-snap", {
         "asks" => [["12.0", "1.0"], ["14.0", "1.0"]],
         "bids" => [["11.0", "2.0"], ["10.0", "2.0"]],
+        "sequence" => 1,
       })
       subject.publish_snapshot
     end
@@ -696,8 +697,9 @@ describe Matching::Engine do
         Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-snap", {
           "asks" => [["14.0", "1.0"]],
           "bids" => [["11.0", "2.0"]],
+          "sequence" => 1,
         })
-        Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-inc", { "asks" => ["11.0", "2.0"] })
+        Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-inc", { "asks" => ["11.0", "2.0"], "sequence" => 2 })
         subject.publish_increment(market.id, :ask, bid1.price, bid1.volume)
         expect(subject.increment_count).to eq(1)
       end
@@ -709,8 +711,9 @@ describe Matching::Engine do
         Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-snap", {
           "asks" => [["14.0", "1.0"]],
           "bids" => [["11.0", "2.0"]],
+          "sequence" => 1,
         })
-        Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-inc", { "asks" => ["11.0", "2.0"] })
+        Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-inc", { "asks" => ["11.0", "2.0"], "sequence" => 2 })
         subject.publish_increment(market.id, :ask, bid1.price, bid1.volume)
       end
 
@@ -722,8 +725,9 @@ describe Matching::Engine do
         Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-snap", {
           "asks" => [["14.0", "1.0"]],
           "bids" => [["11.0", "2.0"]],
+          "sequence" => 1
         })
-        Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-inc", { "asks" => ["11.0", "2.0"] })
+        Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-inc", { "asks" => ["11.0", "2.0"], "sequence" => 2 })
         subject.publish_increment(market.id, :ask, bid1.price, bid1.volume)
       end
 
@@ -734,8 +738,9 @@ describe Matching::Engine do
         Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-snap", {
           "asks" => [["14.0", "1.0"]],
           "bids" => [["11.0", "2.0"]],
+          "sequence" => 1
         }).never
-        Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-inc", { "asks" => ["11.0", "2.0"] })
+        Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-inc", { "asks" => ["11.0", "2.0"], "sequence" => 2 })
         subject.publish_increment(market.id, :ask, bid1.price, bid1.volume)
       end
 
@@ -748,7 +753,7 @@ describe Matching::Engine do
           "asks" => [["14.0", "1.0"]],
           "bids" => [["11.0", "2.0"]],
         }).never
-        Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-inc", { "asks" => ["11.0", "2.0"] })
+        Peatio::Ranger::Events.expects(:publish).with("public", market.id, "ob-inc", { "asks" => ["11.0", "2.0"], "sequence" => 2 })
         subject.publish_increment(market.id, :ask, bid1.price, bid1.volume)
       end
     end
